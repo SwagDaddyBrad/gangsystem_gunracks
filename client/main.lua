@@ -1,6 +1,5 @@
 local ox_inventory = exports.ox_inventory
-local Racks = {}
-local RenderDistance = 200
+Racks = {}
 local rackModel = `xm_prop_xm_gunlocker_01a`
 local tempRackObj = nil
 
@@ -10,30 +9,35 @@ local Keys = {
 
 local ox_items = exports.ox_inventory:Items()
 for item, data in pairs(ox_items) do
-    if Config.rackableWeapons[item] then
-        Config.rackableWeapons[item].label = data.label
+    if Config.RackableWeapons[item] then
+        Config.RackableWeapons[item].label = data.label
     end
 end
 
 local function storeWeapon(rack, slot, name)
-    TriggerServerEvent('js5m_gunrack:server:storeWeapon', rack, slot, name)
-    lib.showContext('js5m_gunrack_context')
+    TriggerServerEvent('cb-gangsystem:server:storeWeapon', rack, slot, name)
+    lib.showContext('GunRackMenu')
+end
+
+local function storeAmmo(rack, slot, name, amount)
+    TriggerServerEvent('cb-gangsystem:server:storeAmmo', rack, slot, name, amount)
+    lib.showContext('GunRackMenu')
 end
 
 local function takeWeapon(rack, rackSlot, name)
-    TriggerServerEvent('js5m_gunrack:server:takeWeapon', rack, rackSlot, name)
-    lib.showContext('js5m_gunrack_context')
+    TriggerServerEvent('cb-gangsystem:server:takeWeapon', rack, rackSlot, name)
+    lib.showContext('GunRackMenu')
 end
 
 local function GetRackPositionOffset(rackIndex, slot, weapon)
     local rack = Racks[rackIndex].object
-    local weaponType = Config.rackableWeapons[weapon].weaponType
+    local weaponType = Config.RackableWeapons[weapon].weaponType
     local xOffset = ({
         rifles = {-0.395, -0.28, -0.17, -0.06, 0.06},
         pistols = {-0.32, -0.17, 0.00, 0.15, 0.30}
     })[weaponType][slot] or 0.0
 
-    local weaponData = Config.rackableWeapons[weapon]
+    local weaponData = Config.RackableWeapons[weapon]
     local zOffset = weaponData.offset.z or 0.0
     local yOffset = weaponData.offset.y or 0.0
 
@@ -142,6 +146,7 @@ local function spawnGun(rackId, slot, weaponType)
     end
 end
 
+
 local function fadeGun(rackId, slot, weaponType)
     local rack = Racks[rackId]
     if not rack then return end
@@ -154,6 +159,7 @@ end
 local function fadeGunRack(id)
     local rack = Racks[id]
     if DoesEntityExist(rack.object) then
+        print("Fading Gun Rack")
         for i=1, #rack.rifles do
             local object = rack.rifles[i].object
             if object then
@@ -175,38 +181,55 @@ end
 
 local function displayPlayerWeapons(data)
     local registeredMenu = {
-        id = 'js5m_gunrack_storeWeaponsMenu',
-        title = 'Store Weapons',
+        id = 'StoreWeaponsMenu',
+        title = Translations.GunRacks.storeWeapon.title,
         options = {},
-        menu = "js5m_gunrack_context"
+        menu = "GunRackMenu"
     }
     local options = {}
 
     local items = ox_inventory:GetPlayerItems()
     for k, v in pairs(items) do
-        if Config.rackableWeapons[v.name] then
-            local metadata = {}
-            for i=1, #v.metadata.components do
-                metadata[#metadata+1] = {label = "Component", value = ox_items[v.metadata.components[i]].label}
+        if Config.RackableWeapons[v.name] then
+            if Config.RackableWeapons[v.name].weaponType ~= 'ammo' then
+                local metadata = {}
+                for i=1, #v.metadata.components do
+                    metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[v.metadata.components[i]].label}
+                end
+                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = v.metadata.ammo}
+                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = v.metadata.durability..'%'}
+                if v.metadata.serial then
+                    metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.serial, value = v.metadata.serial}
+                end
+                options[#options+1] = {
+                    title = string.format(Translations.GunRacks.storeGun.title, v.label),
+                    icon = Translations.GunRacks.storeGun.icon,
+                    iconColor = Translations.GunRacks.storeGun.iconColor,
+                    arrow = Translations.GunRacks.storeGun.arrow,
+                    onSelect = function()
+                        storeWeapon(data.args.rack, v.slot, v.name)
+                    end,
+                    metadata = metadata,
+                }
+            else
+                local ammoAmount = v.count
+                options[#options+1] = {
+                    title = string.format(Translations.GunRacks.storeAmmo.title, v.label),
+                    description = string.format(Translations.GunRacks.storeAmmo.description, ammoAmount),
+                    icon = Translations.GunRacks.storeAmmo.icon,
+                    iconColor = Translations.GunRacks.storeAmmo.iconColor,
+                    arrow = Translations.GunRacks.storeAmmo.arrow,
+                    onSelect = function()
+                        storeAmmo(data.args.rack, v.slot, v.name, ammoAmount)
+                    end,
+                }
             end
-            metadata[#metadata+1] = {label = "Ammo", value = v.metadata.ammo}
-            metadata[#metadata+1] = {label = "Durability", value = v.metadata.durability..'%'}
-            if v.metadata.serial then
-                metadata[#metadata+1] = {label = "Serial Number", value = v.metadata.serial}
-            end
-            options[#options+1] = {
-                title = 'Store ' .. v.label,
-                onSelect = function()
-                    storeWeapon(data.args.rack, v.slot, v.name)
-                end,
-                metadata = metadata,
-            }
         end
     end
 
     if #options == 0 then
         options[#options+1] = {
-            title = 'No weapons to store',
+            title = Translations.GunRacks.storeGun.noWeapons,
             disabled = true
         }
     end
@@ -214,16 +237,16 @@ local function displayPlayerWeapons(data)
     registeredMenu["options"] = options
 
     lib.registerContext(registeredMenu)
-    lib.showContext('js5m_gunrack_storeWeaponsMenu')
+    lib.showContext('StoreWeaponsMenu')
 end
 
 local function takeRackWeapons(data)
     local rack = Racks[data.args.rack]
     local registeredMenu = {
-        id = 'js5m_gunrack_takeWeaponsMenu',
-        title = 'Take Weapons',
+        id = 'TakeWeaponsMenu',
+        title = Translations.GunRacks.takeWeapon.title,
         options = {},
-        menu = "js5m_gunrack_context"
+        menu = "GunRackMenu"
     }
     local options = {}
 
@@ -232,16 +255,18 @@ local function takeRackWeapons(data)
         if item.name then
             local metadata = {}
             for i=1, #item.metadata.components do
-                metadata[#metadata+1] = {label = "Component", value = ox_items[item.metadata.components[i]].label}
+                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[item.metadata.components[i]].label}
             end
-            metadata[#metadata+1] = {label = "Ammo", value = item.metadata.ammo}
-            metadata[#metadata+1] = {label = "Durability", value = item.metadata.durability ..'%'}
+            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = item.metadata.ammo}
+            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = item.metadata.durability ..'%'}
             if item.metadata.serial then
-                metadata[#metadata+1] = {label = "Serial Number", value = item.metadata.serial}
+                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.serial, value = item.metadata.serial}
             end
             options[#options+1] = {
-                
-                title = 'Take ' .. Config.rackableWeapons[item.name].label,
+                title = 'Take ' .. Config.RackableWeapons[item.name].label,
+                icon = Translations.GunRacks.takeGun.icon,
+                iconColor = Translations.GunRacks.takeGun.iconColor,
+                arrow = Translations.GunRacks.takeGun.arrow,
                 onSelect = function()
                     takeWeapon(data.args.rack, i, item.name)
                 end,
@@ -255,13 +280,15 @@ local function takeRackWeapons(data)
         if item.name then
             local metadata = {}
             for i=1, #item.metadata.components do
-                metadata[#metadata+1] = {label = "Component", value = ox_items[item.metadata.components[i]].label}
+                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[item.metadata.components[i]].label}
             end
-            metadata[#metadata+1] = {label = "Ammo", value = item.metadata.ammo}
-            metadata[#metadata+1] = {label = "Durability", value = item.metadata.durability ..'%'}
+            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = item.metadata.ammo}
+            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = item.metadata.durability ..'%'}
             options[#options+1] = {
-                
-                title = 'Take ' .. Config.rackableWeapons[item.name].label,
+                title = string.format(Translations.GunRacks.takeGun.title, Config.RackableWeapons[item.name].label),
+                icon = Translations.GunRacks.takeGun.icon,
+                iconColor = Translations.GunRacks.takeGun.iconColor,
+                arrow = Translations.GunRacks.takeGun.arrow,
                 onSelect = function()
                     takeWeapon(data.args.rack, i, item.name)
                 end,
@@ -270,17 +297,36 @@ local function takeRackWeapons(data)
         end
     end
 
+    for i=1, #rack.ammo do
+        local item = rack.ammo[i]
+        for k, v in pairs(item) do
+            print(k, v)
+        end
+        if item.name then
+            options[#options+1] = {
+                title = string.format("Take %s", Config.RackableWeapons[item.name].label),
+                description = string.format("%.0f Rounds", item.count),
+                icon = Translations.GunRacks.takeGun.icon,
+                iconColor = Translations.GunRacks.takeGun.iconColor,
+                arrow = Translations.GunRacks.takeGun.arrow,
+                onSelect = function()
+                    takeWeapon(data.args.rack, i, item.name)
+                end,
+            }
+        end
+    end
+
     if #options == 0 then
         options[#options+1] = {
-            title = 'No weapons to take',
+            title = Translations.GunRacks.takeGun.noWeapons,
             disabled = true
         }
     end
 
     registeredMenu["options"] = options
-    
+
     lib.registerContext(registeredMenu)
-    lib.showContext('js5m_gunrack_takeWeaponsMenu')
+    lib.showContext('TakeWeaponsMenu')
 end
 
 local function destroyGunRack(data)
@@ -292,7 +338,7 @@ local function destroyGunRack(data)
         cancel = true
     })
     if confirm == 'cancel' then return end
-    TriggerServerEvent('js5m_gunrack:server:destroyGunRack', rack)
+    TriggerServerEvent('cb-gangsystem:server:destroyGunRack', rack)
 end
 
 local function CodeCorrect(code)
@@ -311,36 +357,75 @@ end
 local function AccessRack(rackId)
     local options = {
         {
-            title = 'Store Weapon',
-            icon = 'fa-solid fa-hand-holding',
+            title = Translations.GunRacks.storeWeapon.title,
+            description = Translations.GunRacks.storeWeapon.description,
+            icon = Translations.GunRacks.storeWeapon.icon,
+            iconColor = Translations.GunRacks.storeWeapon.iconColor,
+            arrow = Translations.GunRacks.storeWeapon.arrow,
             distance = 1.5,
             onSelect = function()
                 displayPlayerWeapons({args = {rack = rackId}})
             end,
         },
         {
-            title = 'Take Weapon',
-            icon = 'fa-solid fa-hand-fist',
+            title = Translations.GunRacks.takeWeapon.title,
+            description = Translations.GunRacks.takeWeapon.description,
+            icon = Translations.GunRacks.takeWeapon.icon,
+            iconColor = Translations.GunRacks.takeWeapon.iconColor,
+            arrow = Translations.GunRacks.takeWeapon.arrow,
             distance = 1.5,
             onSelect = function()
                 takeRackWeapons({args = {rack = rackId}})
             end,
         },
         {
-            title = 'Destroy Gun Rack',
-            icon = 'fa-solid fa-trash-can',
+            title = Translations.GunRacks.destroyRack.title,
+            description = Translations.GunRacks.destroyRack.description,
+            icon = Translations.GunRacks.destroyRack.icon,
+            iconColor = Translations.GunRacks.destroyRack.iconColor,
+            arrow = Translations.GunRacks.destroyRack.arrow,
             distance = 1.5,
             onSelect = function()
                 destroyGunRack({args = {rack = rackId}})
             end,
+        },
+        {
+            title = "Change Passcode",
+            description = "Change the passcode for this gun rack",
+            icon = "fa-solid fa-laptop-code",
+            iconColor = "teal",
+            arrow = true,
+            distance = 1.5,
+            onSelect = function()
+                local oldCode = lib.inputDialog("Enter Current Passcode", {
+                    { type = 'input', password = true, label = "Passcode" , min = 1},
+                })
+                if not oldCode then return end
+                local newCode = lib.inputDialog("Enter New Passcode", {
+                    { type = 'input', password = true, label = "Passcode" , min = 1},
+                })
+                if not newCode then return end
+                TriggerServerEvent('cb-gangsystem:server:ChangePasscodeGunRack', rackId, oldCode[1], newCode[1])
+            end,
         }
     }
     lib.registerContext({
-        id = 'js5m_gunrack_context',
-        title = 'Gun Rack',
+        id = 'GunRackMenu',
+        title = string.format(Translations.GunRacks.title, rackId),
         options = options,
     })
-    lib.showContext('js5m_gunrack_context')
+    lib.showContext('GunRackMenu')
+end
+
+local function ConfirmMoveRack(id)
+    local confirm = lib.alertDialog({
+        header = 'Move Gun Rack?',
+        content = 'Are you sure that you want to move this gun rack?',
+        centered = true,
+        cancel = true
+    })
+    if confirm == 'cancel' then return end
+    MoveRack(id)
 end
 
 local function spawnGunRack(id)
@@ -360,8 +445,30 @@ local function spawnGunRack(id)
             icon = 'fa-solid fa-hand-holding',
             distance = 1.5,
             onSelect = function()
-                if not CodeCorrect(rack.code) then return end
+                if not CodeCorrect(Racks[id].code) then return end
                 AccessRack(id)
+            end,
+        },
+        {
+            label = 'Move Gun Rack',
+            name = 'gunrack:storeWeapon',
+            icon = 'fa-solid fa-up-down-left-right',
+            distance = 1.5,
+            onSelect = function()
+                ConfirmMoveRack(id)
+            end,
+        },
+        {
+            label = 'Crack Code',
+            name = 'gunrack:storeWeapon',
+            icon = 'fa-solid fa-laptop-code',
+            distance = 1.5,
+            onSelect = function()
+                -- TODO: Crack Code Minigame, let the admins choose the minigame
+            end,
+            canInteract = function()
+                if not Config.GunRacks.crackCode.enabled then return false end
+                return HasItemClient(Config.GunRacks.crackCode.item, Config.GunRacks.crackCode.itemAmount)
             end,
         },
     })
@@ -413,8 +520,39 @@ local function RayCastGamePlayCamera(distance)
 	return b, c, e
 end
 
-local PlacingObject = false
-exports('placeGunRack', function()
+function SpawnGunRacksForHideout(hideoutId)
+    local PlayerData = GetPlayerData()
+    if PlayerData == nil then return end
+    local metadata = PlayerData.metadata
+    if metadata == nil then return end
+    local playerHideoutID = metadata['gangHideout']
+    if playerHideoutID ~= nil and playerHideoutID ~= 0 and playerHideoutID == hideoutId then
+        Racks = lib.callback.await('cb-gangsystem:server:getRacks', false)
+        if hideoutId ~= nil or hideoutId ~= 0 then
+            for k, rack in pairs(Racks) do
+                if rack.hideout_id == hideoutId then
+                    if not rack.isRendered or rack.isRendered == nil then
+                        spawnGunRack(k)
+                    end
+                end
+            end
+        end
+    end
+end
+exports('SpawnGunRacksForHideout', SpawnGunRacksForHideout)
+
+function HideGunRacksForHideout(hideoutId)
+    for k, rack in pairs(Racks) do
+        print(rack.hideout_id == hideoutId)
+        if rack.hideout_id == hideoutId then
+            fadeGunRack(k)
+        end
+    end
+end
+exports('HideGunRacksForHideout', HideGunRacksForHideout)
+
+function MoveRack(id)
+    fadeGunRack(id)
     if PlacingObject then return end
     local playerCoords = GetEntityCoords(cache.ped)
     lib.requestModel(rackModel)
@@ -441,9 +579,119 @@ exports('placeGunRack', function()
 
     lib.showTextUI(
         '**[Q/E]**   -   Rotate  \n' ..
-        '**[ENTER]**   -   Place gun rack  \n' ..
+        '**[ENTER]**   -   Place Gun Rack  \n' ..
         '**[X]**   -   Abandon  \n'
     )
+
+    Notify("Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
+
+    CreateThread(function()
+        while PlacingObject do
+            local hit, coords, entity = RayCastGamePlayCamera(20.0)
+            rackCoords = coords
+            DisableControlAction( 0, Keys["Q"], true ) -- cover
+            DisableControlAction( 0, Keys["E"], true ) -- cover
+
+            if hit then
+                SetEntityCoords(tempRackObj, coords.x, coords.y, coords.z)
+                PlaceObjectOnGroundProperly(tempRackObj)
+                SetEntityDrawOutline(tempRackObj, true)
+            end
+
+            if #(rackCoords - GetEntityCoords(cache.ped)) < 2.0 then
+                SetEntityDrawOutlineColor(2, 241, 181, 255)
+                inRange = true
+            else --not in range
+                inRange = false
+                SetEntityDrawOutlineColor(244, 68, 46, 255)
+            end
+
+            if IsControlPressed(0, Keys["X"]) then
+                deleteRack()
+                spawnGunRack(id)
+                PlacingObject = false
+            end
+            
+            if IsDisabledControlPressed(0, Keys["Q"]) then
+                heading = heading + 2
+                if heading > 360 then heading = 0.0 end
+            end
+    
+            if IsDisabledControlPressed(0, Keys["E"]) then
+                heading = heading - 2
+                if heading < 0 then heading = 360.0 end
+            end
+
+            SetEntityHeading(tempRackObj, heading)
+            if IsControlJustPressed(0, Keys["ENTER"]) then
+                if not IsPedOnFoot(cache.ped) then
+                    deleteRack()
+                    spawnGunRack(id)
+                    return
+                end
+                if not inRange then
+                    deleteRack()
+                    spawnGunRack(id)
+                    return
+                end
+                local rackRot = GetEntityHeading(tempRackObj)
+                local rackCoords = GetEntityCoords(tempRackObj)
+                deleteRack()
+                TaskStartScenarioInPlace(cache.ped, "WORLD_HUMAN_HAMMERING", 0, true)
+                if lib.progressBar({
+                    duration = 1000, -- TODO: Make this a config
+                    label = Translations.GunRacks.building,
+                    useWhileDead = false,
+                    canCancel = true,
+                    disable = {
+                        car = true,
+                    },
+                }) then
+                    ClearPedTasks(cache.ped)
+                    TriggerServerEvent('cb-gangsystem:server:MoveGunRack', rackCoords, rackRot, id)
+                else
+                    ClearPedTasks(cache.ped)
+                    spawnGunRack(id)
+                end
+            end
+        Wait(0)
+        end
+    end)
+end
+
+local PlacingObject = false
+RegisterNetEvent('cb-gangsystem:client:PlaceGunRack', function()
+    if PlacingObject then return end
+    local playerCoords = GetEntityCoords(cache.ped)
+    lib.requestModel(rackModel)
+    tempRackObj = CreateObject(rackModel, playerCoords.x, playerCoords.y, playerCoords.z, false, false, false)
+    local heading = 0.0
+    SetEntityHeading(tempRackObj, 0)
+    
+    SetEntityAlpha(tempRackObj, 225)
+    SetEntityCollision(tempRackObj, false, false)
+    -- SetEntityInvincible(tempRackObj, true)
+    FreezeEntityPosition(tempRackObj, true)
+
+    PlacingObject = true
+    local rackCoords = nil
+    local inRange = false
+
+    local function deleteRack()
+        PlacingObject = false
+        SetEntityDrawOutline(tempRackObj, false)
+        DeleteEntity(tempRackObj)
+        tempRackObj = nil
+        lib.hideTextUI()
+    end
+
+    lib.showTextUI(
+        '**[Q/E]**   -   Rotate  \n' ..
+        '**[ENTER]**   -   Place Gun Rack  \n' ..
+        '**[X]**   -   Abandon  \n'
+    )
+
+    Notify("Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
 
     CreateThread(function()
         while PlacingObject do
@@ -510,18 +758,18 @@ exports('placeGunRack', function()
                     end
                     passcode = input[1]
                 end
-                TaskStartScenarioInPlace(cache.ped, "WORLD_HUMAN_HAMMERING", 0, true)
                 if lib.progressBar({
-                    duration = 10000,
+                    duration = 1000, -- TODO: Make this a config
                     label = 'Building Gun Rack',
                     useWhileDead = false,
                     canCancel = true,
+                    scenario = 'WORLD_HUMAN_HAMMERING',
                     disable = {
                         car = true,
                     },
                 }) then
                     ClearPedTasks(cache.ped)
-                    TriggerServerEvent('js5m_gunrack:server:placeGunRack', rackCoords, rackRot, passcode)
+                    TriggerServerEvent('cb-gangsystem:server:PlaceGunRack', rackCoords, rackRot, passcode)
                 else
                     ClearPedTasks(cache.ped)
                 end
@@ -531,24 +779,34 @@ exports('placeGunRack', function()
     end)
 end)
 
-RegisterNetEvent('js5m_gunrack:client:placeGunRack', function(id, data)
+RegisterNetEvent('cb-gangsystem:client:spawnGunRack', function(id, data)
     if source == '' then return end
     Racks[id] = data
+    spawnGunRack(id)
 end)
 
-RegisterNetEvent('js5m_gunrack:client:storeWeapon', function(rackIndex, rackSlot, rackType, data)
+RegisterNetEvent('cb-gangsystem:client:fadeGunRack', function(id)
+    fadeGunRack(id)
+end)
+
+RegisterNetEvent('cb-gangsystem:client:storeWeapon', function(rackIndex, rackSlot, rackType, data)
     if source == '' then return end
     Racks[rackIndex][rackType][rackSlot] = data
     spawnGun(rackIndex, rackSlot, rackType)
 end)
 
-RegisterNetEvent('js5m_gunrack:client:takeWeapon', function(rackIndex, rackSlot, rackType)
+RegisterNetEvent('cb-gangsystem:client:storeAmmo', function(rackIndex, rackSlot, rackType, data)
+    if source == '' then return end
+    Racks[rackIndex][rackType][rackSlot] = data
+end)
+
+RegisterNetEvent('cb-gangsystem:client:takeWeapon', function(rackIndex, rackSlot, rackType)
     if source == '' then return end
     fadeGun(rackIndex, rackSlot, rackType)
     Racks[rackIndex][rackType][rackSlot] = {name = nil, available = true}
 end)
 
-RegisterNetEvent('js5m_gunrack:client:destroyGunRack', function(id)
+RegisterNetEvent('cb-gangsystem:client:destroyGunRack', function(id)
     if source == '' then return end
     local rack = Racks[id]
     if rack.isRendered then
@@ -580,20 +838,22 @@ end)
 
 AddEventHandler('onClientResourceStart', function(resourceName)
     if GetCurrentResourceName() ~= resourceName then return end
-    Racks = lib.callback.await('js5m_gunrack:server:getRacks', false)
+    local PlayerData = GetPlayerData()
+    if PlayerData == nil then return end
+    local metadata = PlayerData.metadata
+    if metadata == nil then return end
+    local hideoutId = metadata['gangHideout']
+    if hideoutId ~= nil and hideoutId ~= 0 then
+        SpawnGunRacksForHideout(hideoutId)
+    end
 end)
 
-CreateThread(function()
-    while true do
-        local playerCoords = GetEntityCoords(cache.ped)
-        for k, rack in pairs(Racks) do
-            local dist = #(playerCoords - vec3(rack.coords.x, rack.coords.y, rack.coords.z))
-            if dist < RenderDistance and not rack.isRendered then
-                spawnGunRack(k)
-            elseif dist >= RenderDistance and rack.isRendered then
-                fadeGunRack(k)
-            end
-        end
-        Wait(2500)
+AddEventHandler('onResourceStop', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    local PlayerData = GetPlayerData()
+    if PlayerData == nil then return end
+    local hideoutId = GetPlayerData().metadata['gangHideout']
+    if hideoutId ~= nil and hideoutId ~= 0 then
+        HideGunRacksForHideout(hideoutId)
     end
 end)
