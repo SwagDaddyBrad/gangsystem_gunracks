@@ -18,3 +18,28 @@ function GetPlayerData()
         return QBX.PlayerData
     end
 end
+
+function HasItemClient(item, amount)
+    if not UsingOxInventory and Framework == "qb-core" then
+        return QBCore.Functions.HasItem(item, amount)
+    elseif UsingOxInventory then
+        if UsingOxInventory then
+            local itemCount = exports.ox_inventory:Search("count", item)
+            if type(itemCount) == "table" then
+                for k, v in pairs(itemCount) do
+                    itemCount = v
+                end
+            end
+            if not itemCount then
+                return false
+            elseif itemCount >= amount then
+                return true
+            else
+                return false
+            end
+        else
+            return QBCore.Functions.HasItem(item, amount)
+        end
+    end
+    return false
+end

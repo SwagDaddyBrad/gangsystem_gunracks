@@ -130,6 +130,7 @@ local function spawnGun(rackId, slot, weaponType)
         lib.requestWeaponAsset(hash, 5000, 31, 0)
         rackSlot.object = CreateWeaponObject(hash, 50, position.offset.x, position.offset.y, position.offset.z, showDefault, 1.0, hasLuxeMod or 0, false, true)
         while not DoesEntityExist(rackSlot.object) do Wait(1) end
+        SetWeaponObjectTintIndex(rackSlot.object, rackSlot.metadata.tint or 0)
         SetEntityCoords(rackSlot.object, position.offset.x, position.offset.y, position.offset.z, false, false, false, true)
         
         if components then
@@ -182,7 +183,7 @@ end
 local function displayPlayerWeapons(data)
     local registeredMenu = {
         id = 'StoreWeaponsMenu',
-        title = Translations.GunRacks.storeWeapon.title,
+        title = "Store Weapon",
         options = {},
         menu = "GunRackMenu"
     }
@@ -194,18 +195,18 @@ local function displayPlayerWeapons(data)
             if Config.RackableWeapons[v.name].weaponType ~= 'ammo' then
                 local metadata = {}
                 for i=1, #v.metadata.components do
-                    metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[v.metadata.components[i]].label}
+                    metadata[#metadata+1] = {label = "Component", value = ox_items[v.metadata.components[i]].label}
                 end
-                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = v.metadata.ammo}
-                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = v.metadata.durability..'%'}
+                metadata[#metadata+1] = {label = "Ammo", value = v.metadata.ammo}
+                metadata[#metadata+1] = {label = "Durability", value = v.metadata.durability..'%'}
                 if v.metadata.serial then
-                    metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.serial, value = v.metadata.serial}
+                    metadata[#metadata+1] = {label = "Serial Number", value = v.metadata.serial}
                 end
                 options[#options+1] = {
-                    title = string.format(Translations.GunRacks.storeGun.title, v.label),
-                    icon = Translations.GunRacks.storeGun.icon,
-                    iconColor = Translations.GunRacks.storeGun.iconColor,
-                    arrow = Translations.GunRacks.storeGun.arrow,
+                    title = string.format("Store %s", v.label),
+                    icon = "fa-solid fa-gun",
+                    iconColor = "black",
+                    arrow = true,
                     onSelect = function()
                         storeWeapon(data.args.rack, v.slot, v.name)
                     end,
@@ -214,11 +215,11 @@ local function displayPlayerWeapons(data)
             else
                 local ammoAmount = v.count
                 options[#options+1] = {
-                    title = string.format(Translations.GunRacks.storeAmmo.title, v.label),
-                    description = string.format(Translations.GunRacks.storeAmmo.description, ammoAmount),
-                    icon = Translations.GunRacks.storeAmmo.icon,
-                    iconColor = Translations.GunRacks.storeAmmo.iconColor,
-                    arrow = Translations.GunRacks.storeAmmo.arrow,
+                    title = string.format("Store %s", v.label),
+                    description = string.format("%.0f Rounds", ammoAmount),
+                    icon = "fa-solid fa-boxes-stacked",
+                    iconColor = "orange",
+                    arrow = true,
                     onSelect = function()
                         storeAmmo(data.args.rack, v.slot, v.name, ammoAmount)
                     end,
@@ -229,7 +230,7 @@ local function displayPlayerWeapons(data)
 
     if #options == 0 then
         options[#options+1] = {
-            title = Translations.GunRacks.storeGun.noWeapons,
+            title = "No weapons to store",
             disabled = true
         }
     end
@@ -244,7 +245,7 @@ local function takeRackWeapons(data)
     local rack = Racks[data.args.rack]
     local registeredMenu = {
         id = 'TakeWeaponsMenu',
-        title = Translations.GunRacks.takeWeapon.title,
+        title = "Take Weapon",
         options = {},
         menu = "GunRackMenu"
     }
@@ -255,18 +256,18 @@ local function takeRackWeapons(data)
         if item.name then
             local metadata = {}
             for i=1, #item.metadata.components do
-                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[item.metadata.components[i]].label}
+                metadata[#metadata+1] = {label = "Component", value = ox_items[item.metadata.components[i]].label}
             end
-            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = item.metadata.ammo}
-            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = item.metadata.durability ..'%'}
+            metadata[#metadata+1] = {label = "Ammo", value = item.metadata.ammo}
+            metadata[#metadata+1] = {label = "Durability", value = item.metadata.durability ..'%'}
             if item.metadata.serial then
-                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.serial, value = item.metadata.serial}
+                metadata[#metadata+1] = {label = "Serial Number", value = item.metadata.serial}
             end
             options[#options+1] = {
                 title = 'Take ' .. Config.RackableWeapons[item.name].label,
-                icon = Translations.GunRacks.takeGun.icon,
-                iconColor = Translations.GunRacks.takeGun.iconColor,
-                arrow = Translations.GunRacks.takeGun.arrow,
+                icon = "fa-solid fa-gun",
+                iconColor = "black",
+                arrow = true,
                 onSelect = function()
                     takeWeapon(data.args.rack, i, item.name)
                 end,
@@ -280,15 +281,15 @@ local function takeRackWeapons(data)
         if item.name then
             local metadata = {}
             for i=1, #item.metadata.components do
-                metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.component, value = ox_items[item.metadata.components[i]].label}
+                metadata[#metadata+1] = {label = "Component", value = ox_items[item.metadata.components[i]].label}
             end
-            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.ammo, value = item.metadata.ammo}
-            metadata[#metadata+1] = {label = Translations.GunRacks.gunDetails.durability, value = item.metadata.durability ..'%'}
+            metadata[#metadata+1] = {label = "Ammo", value = item.metadata.ammo}
+            metadata[#metadata+1] = {label = "Durability", value = item.metadata.durability ..'%'}
             options[#options+1] = {
-                title = string.format(Translations.GunRacks.takeGun.title, Config.RackableWeapons[item.name].label),
-                icon = Translations.GunRacks.takeGun.icon,
-                iconColor = Translations.GunRacks.takeGun.iconColor,
-                arrow = Translations.GunRacks.takeGun.arrow,
+                title = string.format("Take %s", Config.RackableWeapons[item.name].label),
+                icon = "fa-solid fa-gun",
+                iconColor = "black",
+                arrow = true,
                 onSelect = function()
                     takeWeapon(data.args.rack, i, item.name)
                 end,
@@ -306,9 +307,9 @@ local function takeRackWeapons(data)
             options[#options+1] = {
                 title = string.format("Take %s", Config.RackableWeapons[item.name].label),
                 description = string.format("%.0f Rounds", item.count),
-                icon = Translations.GunRacks.takeGun.icon,
-                iconColor = Translations.GunRacks.takeGun.iconColor,
-                arrow = Translations.GunRacks.takeGun.arrow,
+                icon = "fa-solid fa-gun",
+                iconColor = "black",
+                arrow = true,
                 onSelect = function()
                     takeWeapon(data.args.rack, i, item.name)
                 end,
@@ -318,7 +319,7 @@ local function takeRackWeapons(data)
 
     if #options == 0 then
         options[#options+1] = {
-            title = Translations.GunRacks.takeGun.noWeapons,
+            title = "No weapons to take",
             disabled = true
         }
     end
@@ -357,33 +358,33 @@ end
 local function AccessRack(rackId)
     local options = {
         {
-            title = Translations.GunRacks.storeWeapon.title,
-            description = Translations.GunRacks.storeWeapon.description,
-            icon = Translations.GunRacks.storeWeapon.icon,
-            iconColor = Translations.GunRacks.storeWeapon.iconColor,
-            arrow = Translations.GunRacks.storeWeapon.arrow,
+            title = "Store Weapon",
+            description = "Store a weapon in this rack",
+            icon = "fa-solid fa-boxes-stacked",
+            iconColor = "orange",
+            arrow = true,
             distance = 1.5,
             onSelect = function()
                 displayPlayerWeapons({args = {rack = rackId}})
             end,
         },
         {
-            title = Translations.GunRacks.takeWeapon.title,
-            description = Translations.GunRacks.takeWeapon.description,
-            icon = Translations.GunRacks.takeWeapon.icon,
-            iconColor = Translations.GunRacks.takeWeapon.iconColor,
-            arrow = Translations.GunRacks.takeWeapon.arrow,
+            title = "Take Weapon",
+            description = "Take a weapon from this rack",
+            icon = "fa-solid fa-gun",
+            iconColor = "black",
+            arrow = true,
             distance = 1.5,
             onSelect = function()
                 takeRackWeapons({args = {rack = rackId}})
             end,
         },
         {
-            title = Translations.GunRacks.destroyRack.title,
-            description = Translations.GunRacks.destroyRack.description,
-            icon = Translations.GunRacks.destroyRack.icon,
-            iconColor = Translations.GunRacks.destroyRack.iconColor,
-            arrow = Translations.GunRacks.destroyRack.arrow,
+            title = "Destroy Gun Rack",
+            description = "Destroy this gun rack",
+            icon = "fa-solid fa-trash-can",
+            iconColor = "red",
+            arrow = true,
             distance = 1.5,
             onSelect = function()
                 destroyGunRack({args = {rack = rackId}})
@@ -411,7 +412,7 @@ local function AccessRack(rackId)
     }
     lib.registerContext({
         id = 'GunRackMenu',
-        title = string.format(Translations.GunRacks.title, rackId),
+        title = string.format("Gun Rack %s", rackId),
         options = options,
     })
     lib.showContext('GunRackMenu')
@@ -640,7 +641,7 @@ function MoveRack(id)
                 TaskStartScenarioInPlace(cache.ped, "WORLD_HUMAN_HAMMERING", 0, true)
                 if lib.progressBar({
                     duration = 1000, -- TODO: Make this a config
-                    label = Translations.GunRacks.building,
+                    label = "Building Gun Rack",
                     useWhileDead = false,
                     canCancel = true,
                     disable = {

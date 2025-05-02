@@ -198,7 +198,10 @@ RegisterServerEvent('cb-gangsystem:server:takeWeapon', function(rackIndex, rackS
                 TriggerClientEvent('cb-gangsystem:client:takeWeapon', -1, rackIndex, rackSlot, weaponType)
             end
         else
-            Notify(src, 'That weapon does not seem to be in this rack', 'error')
+            TriggerClientEvent('ox_lib:notify', src, {
+                description = 'That weapon does not seem to be in this rack',
+                type = 'error'
+            })
         end
     else
         if Racks[rackIndex][weaponType][rackSlot].name == weaponName then
@@ -209,7 +212,10 @@ RegisterServerEvent('cb-gangsystem:server:takeWeapon', function(rackIndex, rackS
                 TriggerClientEvent('cb-gangsystem:client:takeWeapon', -1, rackIndex, rackSlot, weaponType)
             end
         else
-            Notify(src, 'That weapon does not seem to be in this rack', 'error')
+            TriggerClientEvent('ox_lib:notify', src, {
+                description = 'That weapon does not seem to be in this rack',
+                type = 'error'
+            })
         end
     end
     Racks[rackIndex].busy = false
@@ -285,18 +291,24 @@ RegisterServerEvent('cb-gangsystem:server:ChangePasscodeGunRack', function(rackI
     if (oldCode == nil or oldCode == "") and (Racks[rackId].code == nil or Racks[rackId].code == "") then -- If the gun rack doesn't have a passcode, we do this
         Racks[rackId].code = code
         local query = SQLQuery("UPDATE gang_gunracks SET code = ? WHERE id = ?", {code, rackId})
-        SendDataToAllClients("Racks", Racks)
+        exports['cb-gangsystem']:SendDataToAllClients("Racks", Racks)
         return
     end
     if oldCode ~= Racks[rackId].code then
-        TriggerClientEvent('cb-gangsystem:client:Notify', src, "Wrong Passcode", "You entered the wrong passcode for the gun rack.", "error", 5000)
+        TriggerClientEvent('ox_lib:notify', src, {
+            description = 'You entered the wrong passcode for the gun rack.',
+            type = 'error'
+        })
         return
     end
     if oldCode == code then
-        TriggerClientEvent('cb-gangsystem:client:Notify', src, "Same Passcode", "You entered the same passcode for the gun rack.", "error", 5000)
+        TriggerClientEvent('ox_lib:notify', src, {
+            description = 'You entered the same passcode for the gun rack.',
+            type = 'error'
+        })
         return
     end
     Racks[rackId].code = code
     local query = SQLQuery("UPDATE gang_gunracks SET code = ? WHERE id = ?", {code, rackId})
-    SendDataToAllClients("Racks", Racks)
+    exports['cb-gangsystem']:SendDataToAllClients("Racks", Racks)
 end)
