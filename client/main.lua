@@ -349,7 +349,7 @@ local function CodeCorrect(code)
     })
     if not input then return end
     if input[1] ~= code then
-        lib.notify({type = 'error', description = 'Invalid passcode'})
+        TriggerEvent('cb-gangsystem:client:Notify', "Invalid Passcode", "You entered an invalid or incorrect passcode.", "error", 5000)
         return false
     end
     return true
@@ -584,7 +584,7 @@ function MoveRack(id)
         '**[X]**   -   Abandon  \n'
     )
 
-    Notify("Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
+    TriggerEvent('cb-gangsystem:client:Notify', "Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
 
     CreateThread(function()
         while PlacingObject do
@@ -692,7 +692,7 @@ RegisterNetEvent('cb-gangsystem:client:PlaceGunRack', function()
         '**[X]**   -   Abandon  \n'
     )
 
-    Notify("Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
+    TriggerEvent('cb-gangsystem:client:Notify', "Tip", "If you have trouble placing the gun rack, try looking through your eyes.", "info", 5000)
 
     CreateThread(function()
         while PlacingObject do
