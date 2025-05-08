@@ -7,7 +7,13 @@ Config.GunRacks = { -- Gun Racks ONLY work with Ox Inventory. Do not enable this
         item = "laptop", -- The item name of the crack item.
         itemAmount = 1, -- The amount of crack items needed to unlock the Gun Rack.
         minigame = function()
-            -- TODO: Minigame stuff here
+            -- PUT YOUR MINIGAME STUFF HERE
+            local chance = math.random(1, 100)
+            if chance <= 50 then
+                return true
+            else
+                return false
+            end
         end
     }
 }
