@@ -105,7 +105,7 @@ AddEventHandler('ox_inventory:usedItem', function(playerId, name, slotId, metada
         if not Player then return end
         local inHideout = Player.PlayerData.metadata['gangHideout']
         if (inHideout == nil) or inHideout == 0 then
-            print("Player is not in a hideout")
+            TriggerClientEvent('cb-gangsystem:client:Notify', playerId, "No Hideout", "You must be inside a Gang Hideout in order to place this!", "error")
         else
             TriggerClientEvent('cb-gangsystem:client:PlaceGunRack', playerId)
         end
