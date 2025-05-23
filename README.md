@@ -1,51 +1,88 @@
 ![image](https://github.com/JoeSzymkowiczFiveM/js5m_gunrack/assets/70592880/2bf98aaa-6a64-4bad-b905-38d7dad4d09f)
+# 🔫 js5m_gunrack - Gang System V2 Fork
+
+This is a fork of the original [js5m_gunrack](https://github.com/JoeSzymkowiczFiveM/js5m_gunrack) script for FiveM, modified to support integration with the **Gang System V2** script.
+
+> ⚠️ **Important:** You must start the `gangsystem_gunracks` script **AFTER** the `cb-gangsystem` resource to ensure correct functionality.
+
+---
+
 ## ✨ Description
-This is a script to place a gun rack in the world, and use it for storing weapons.
+
+This script allows players to place a gun rack in the world and use it for storing and retrieving weapons. This fork adds support for **Gang System V2**, enabling gang members to utilize gun racks within their system framework.
+---
 
 ## 👀 Usage
-Use the included sql script to create the required table and add the snippet below to create the item. Use the `gunrack` item in your inventory to start the placement process. Once you've placed the rack, you can then target the rack to store weapons in it, or take weapons from it. Optionally, you can set a passcode on the gunrack to limit access to it.
 
-## 📚 Items
-You will need to add a `gunrack` item to your inventory items list.
+1. Execute the included SQL script to create the necessary database table.
+2. Add the `gunrack` item to your inventory using the configuration below.
+3. In-game, use the `gunrack` item to begin placement.
+4. After placement, you can target the rack to store or retrieve weapons.
+5. Optional: Set a passcode to control access.
 
-```
+---
+
+## 📚 Item Configuration
+
+Add this to your inventory items list (for use with `ox_inventory`):
+
+```lua
 ['gunrack'] = {
   label = 'Gun Rack',
   weight = 10000,
   stack = false,
   consume = 0,
   client = {
-      export = 'js5m_gunrack.placeGunRack',
+    export = 'js5m_gunrack.placeGunRack',
   },
 },
 ```
 
 ## 🔗 Dependencies
+
 - [ox_lib](https://github.com/overextended/ox_lib)
 - [ox_target](https://github.com/overextended/ox_target)
 - [ox_inventory](https://github.com/overextended/ox_inventory)
 - [oxmysql](https://github.com/overextended/oxmysql)
+- **Gang System V2**
 
-## 👐 Credit
-A huge thank you to [FjamZoo](https://github.com/FjamZoo) for his research and work with weapons components and skins. Thanks to [Snipe](https://github.com/pushkart2) for writing the MySQL module code for this. Also, huge shoutout to the [Overextended](https://github.com/overextended) group for their continued work on the ox resources. A big thank you to the guy that was selling roughly this same thing for €120 on the Releases forum, for the motivation to work on this. Keep FiveM free!
+---
 
+## 🧑‍🤝‍🧑 Gang System Integration
+
+This fork enables the following features when used with **Gang System V2**:
+
+- Racks can be limited to gang members
+- Ownership and access managed through gang system logic
+- Placement can be tied to gang turf *(planned)*
+
+---
 
 ## ✅ TODO
-- PRs are always welcome to add more weapons to the config. I'm sure I'm missing some.
-- Make stun gun its own space
-- Add ammo/armor storage spaces
-- Optimize offsets and rotations
-- Add `prop_cs_gunrack` functionality
 
+- [ ] Add gang territory-based placement rules
+- [ ] Gang-rank-specific weapon access
+- [ ] Support for `prop_cs_gunrack` model
+- [ ] UI improvements for gang-based rack management
 
-## Preview
-Rack Placement
+---
 
-https://streamable.com/c98cv3
+## 🙏 Credits
 
-Store and Take Weapons
+- **Original Script**: [JoeSzymkowicz](https://github.com/JoeSzymkowiczFiveM)
+- **Weapon Component Research**: [FjamZoo](https://github.com/FjamZoo)
+- **MySQL Module**: [Snipe](https://github.com/pushkart2)
+- **ox Resources**: [Overextended](https://github.com/overextended)
 
-https://streamable.com/86msx5
+---
 
-## Discord
-[Joe Szymkowicz FiveM Development](https://discord.gg/5vPGxyCB4z)
+## 🎥 Preview
+
+**Rack Placement**  
+[https://streamable.com/c98cv3](https://streamable.com/c98cv3)
+
+**Store and Take Weapons**  
+[https://streamable.com/86msx5](https://streamable.com/86msx5)
+
+---
+For issues or questions about this fork, please open an issue on this repo or contact me directly.
